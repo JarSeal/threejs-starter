@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import * as Stats from './vendor/stats.min.js';
 
-class TileMapRoot {
+class Root {
     constructor() {
 
         // Setup renderer [START]
@@ -119,4 +119,4 @@ class TileMapRoot {
     }
 }
 
-new TileMapRoot();
+new Root();
