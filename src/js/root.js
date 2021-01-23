@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import * as Stats from './vendor/stats.min.js';
 
 class TileMapRoot {
@@ -27,6 +28,9 @@ class TileMapRoot {
         // Setup camera and aspect ratio [START]
         this.aspectRatio = screenSize.x / screenSize.y;
         const camera = new THREE.PerspectiveCamera(45, this.aspectRatio, 0.1, 64);
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.update();
+        this.controls = controls;
         this.camera = camera;
         // Setup camera and aspect ratio [/END]
 
@@ -56,9 +60,7 @@ class TileMapRoot {
     runApp(scene, camera) {
 
         // Main app logic [START]
-        camera.position.x = 1;
-        camera.position.y = 1;
-        camera.position.z = 10;
+        camera.position.set(1, 1, 10);
         camera.lookAt(new THREE.Vector3(0, 0, 0));
         const geo = new THREE.BoxBufferGeometry(1, 1, 1);
         const mat = new THREE.MeshLambertMaterial({ color: 0xfff000 });
