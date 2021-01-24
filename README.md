@@ -2,11 +2,11 @@
 Three.js (with Cannon.js) starter template.
 
 Start:
-
-npm install
+		npm install
 
 Run in development mode:
-- npm start
+
+		npm start
 
 Create a build:
 - npm run build:front
