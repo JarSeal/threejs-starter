@@ -1,12 +1,12 @@
-// Three.js with Cannon.js version
-// Change /src/index.js require target to './js/root-with-cannon.js to use this version
-
 import * as THREE from 'three';
 import * as CANNON from 'cannon';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { GUI } from 'three/examples/jsm/libs/dat.gui.module.js';
 import * as Stats from './vendor/stats.min.js';
 import CannonHelper from './vendor/CannonHelper.js';
+import Level from './Level.js';
+import Player from './Player.js';
+import Controls from './Controls.js';
 
 class Root {
     constructor() {
@@ -87,46 +87,20 @@ class Root {
         this.sceneState.gui = gui;
         // GUI setup [/END]
 
-        this.runApp(camera);
+        this.runApp(camera, this.sceneState);
     }
 
-    runApp(camera) {
+    runApp(camera, sceneState) {
 
         // Main app logic [START]
         camera.position.set(1, 1, 10);
         camera.lookAt(new THREE.Vector3(0, 0, 0));
 
-        // Add ground
-        const gSize = [5, 0.2, 2];
-        const gPos = [0, 0, 0];
-        const groundGeo = new THREE.BoxBufferGeometry(gSize[0], gSize[1], gSize[2]);
-        const groundMat = new THREE.MeshLambertMaterial({ color: 0x666666 });
-        const groundMesh = new THREE.Mesh(groundGeo, groundMat);
-        groundMesh.position.set(gPos[0], gPos[1], gPos[2]);
-        const groundBody = new CANNON.Body({
-            mass: 0,
-            position: new CANNON.Vec3(gPos[0] / 2, gPos[1] / 2, gPos[2] / 2),
-            shape: new CANNON.Box(new CANNON.Vec3(gSize[0] / 2, gSize[1] / 2, gSize[2] / 2))
-        });
-        this.sceneState.physics.addShape(groundMesh, groundBody);
-
-        // Add a box
-        const bSize = [1, 1, 1];
-        const bPos = [0, 8, 0];
-        const boxGeo = new THREE.BoxBufferGeometry(bSize[0], bSize[1], bSize[2]);
-        const boxMat = new THREE.MeshLambertMaterial({ color: 0xfff000 });
-        const boxMesh = new THREE.Mesh(boxGeo, boxMat);
-        boxMesh.position.set(bPos[0], bPos[1], bPos[2]);
-        const boxBody = new CANNON.Body({
-            mass: 5,
-            position: new CANNON.Vec3(bPos[0] / 2, bPos[1] / 2, bPos[2] / 2),
-            shape: new CANNON.Box(new CANNON.Vec3(bSize[0] / 2, bSize[1] / 2, bSize[2] / 2))
-        });
-        this.sceneState.physics.addShape(boxMesh, boxBody, 0xFF0000);
-        // Jump:
-        setTimeout(() => {
-            boxBody.velocity.y = 8;
-        }, 3000);
+        const level = new Level(sceneState);
+        const player = new Player(sceneState, level);
+        const controls = new Controls(sceneState, player);
+        sceneState.level = level;
+        sceneState.player = player;
 
         // Main app logic [/END]
 
@@ -138,9 +112,25 @@ class Root {
     renderLoop = () => {
         requestAnimationFrame(this.renderLoop);
         const delta = this.sceneState.clock.getDelta();
+        const player = this.sceneState.player.getPlayer();
         this.updatePhysics(delta);
+        this.updateCamera(player);
+        this.sceneState.level.isPlayerDead(player);
         this.renderer.render(this.scene, this.camera);
         if(this.sceneState.settings.showStats) this.stats.update(); // Debug statistics
+    }
+
+    updateCamera(player) {
+        this.camera.position.set(
+            player.body.position.x + 1,
+            player.body.position.y + 1,
+            player.body.position.z + 10
+        );
+        this.camera.lookAt(new THREE.Vector3(
+            player.body.position.x,
+            player.body.position.y,
+            player.body.position.z
+        ));
     }
 
     updatePhysics(delta) {
