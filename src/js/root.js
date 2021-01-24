@@ -39,12 +39,13 @@ class Root {
         // Setup physics (cannon.js) [START]
         const world = new CANNON.World();
         world.gravity.set(0, -9.82, 0);
+        world.broadphase = new CANNON.NaiveBroadphase();
+        world.solver.iterations = 10;
+        this.sceneState.physics = {};
+        this.sceneState.physics.world = world;
+        this.sceneState.physics.fixedTimeStep = 1 / 60;
+        this.sceneState.physics.maxSubSteps = 3;
         this.world = world;
-        this.sceneState.physics = {
-            world,
-            fixedTimeStep: 1 / 60,
-            maxSubSteps: 3
-        };
         // Setup physics (cannon.js) [/END]
 
         // Setup debug statisctics [START]
