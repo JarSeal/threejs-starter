@@ -1,10 +1,12 @@
-// Three.js only version
-// Change /src/index.js require target to './js/root.js' to use this version
+// Three.js with Cannon.js version
+// Change /src/index.js require target to './js/root-with-cannon.js to use this version
 
 import * as THREE from 'three';
+import * as CANNON from 'cannon';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { GUI } from 'three/examples/jsm/libs/dat.gui.module.js';
 import * as Stats from './vendor/stats.min.js';
+import CannonHelper from './vendor/CannonHelper.js';
 
 class Root {
     constructor() {
@@ -39,6 +41,21 @@ class Root {
         this.camera = camera;
         // Setup camera and aspect ratio [/END]
 
+        // Setup physics (cannon.js) [START]
+        const world = new CANNON.World();
+        world.gravity.set(0, -9.82, 0);
+        world.broadphase = new CANNON.NaiveBroadphase();
+        world.solver.iterations = 10;
+        this.sceneState.physics = {};
+        this.sceneState.physics.world = world;
+        this.sceneState.physics.timeStep = 1 / 60;
+        this.sceneState.physics.maxSubSteps = 3;
+        this.sceneState.physics.addShape = this.addShapeToPhysics;
+        this.sceneState.physics.shapes = [];
+        this.world = world;
+        this.helper = new CannonHelper(scene, world);
+        // Setup physics (cannon.js) [/END]
+
         // Setup debug statisctics [START]
         const createStats = () => {
             const s = new Stats();
@@ -69,28 +86,46 @@ class Root {
         });
         // GUI setup [/END]
 
-        this.runApp(scene, camera);
+        this.runApp(camera);
     }
 
-    runApp(scene, camera) {
+    runApp(camera) {
 
         // Main app logic [START]
         camera.position.set(1, 1, 10);
         camera.lookAt(new THREE.Vector3(0, 0, 0));
 
         // Add ground
-        const groundGeo = new THREE.BoxBufferGeometry(5, 0.2, 2);
+        const gSize = [5, 0.2, 2];
+        const gPos = [0, 0, 0];
+        const groundGeo = new THREE.BoxBufferGeometry(gSize[0], gSize[1], gSize[2]);
         const groundMat = new THREE.MeshLambertMaterial({ color: 0x666666 });
         const groundMesh = new THREE.Mesh(groundGeo, groundMat);
-        groundMesh.position.set(0, -0.1, 0);
-        scene.add(groundMesh);
+        groundMesh.position.set(gPos[0], gPos[1], gPos[2]);
+        const groundBody = new CANNON.Body({
+            mass: 0,
+            position: new CANNON.Vec3(gPos[0] / 2, gPos[1] / 2, gPos[2] / 2),
+            shape: new CANNON.Box(new CANNON.Vec3(gSize[0] / 2, gSize[1] / 2, gSize[2] / 2))
+        });
+        this.sceneState.physics.addShape(groundMesh, groundBody);
 
         // Add a box
-        const boxGeo = new THREE.BoxBufferGeometry(1, 1, 1);
+        const bSize = [1, 1, 1];
+        const bPos = [0, 8, 0];
+        const boxGeo = new THREE.BoxBufferGeometry(bSize[0], bSize[1], bSize[2]);
         const boxMat = new THREE.MeshLambertMaterial({ color: 0xfff000 });
         const boxMesh = new THREE.Mesh(boxGeo, boxMat);
-        boxMesh.position.set(0, 0.5, 0);
-        scene.add(boxMesh);
+        boxMesh.position.set(bPos[0], bPos[1], bPos[2]);
+        const boxBody = new CANNON.Body({
+            mass: 5,
+            position: new CANNON.Vec3(bPos[0] / 2, bPos[1] / 2, bPos[2] / 2),
+            shape: new CANNON.Box(new CANNON.Vec3(bSize[0] / 2, bSize[1] / 2, bSize[2] / 2))
+        });
+        this.sceneState.physics.addShape(boxMesh, boxBody, 0xFF0000);
+        // Jump:
+        setTimeout(() => {
+            boxBody.velocity.y = 8;
+        }, 3000);
 
         // Main app logic [/END]
 
@@ -101,9 +136,31 @@ class Root {
 
     renderLoop = () => {
         requestAnimationFrame(this.renderLoop);
-        // const delta = this.sceneState.clock.getDelta();
+        const delta = this.sceneState.clock.getDelta();
+        this.updatePhysics(delta);
         this.renderer.render(this.scene, this.camera);
         if(this.sceneState.settings.showStats) this.stats.update(); // Debug statistics
+    }
+
+    updatePhysics(delta) {
+        let i;
+        const l = this.sceneState.physics.shapesLength,
+            s = this.sceneState.physics.shapes,
+            settings = this.sceneState.settings;
+        this.world.step(this.sceneState.physics.timeStep, delta, this.sceneState.physics.maxSubSteps);
+        for(i=0; i<l; i++) {
+            s[i].mesh.position.copy(s[i].body.position);
+            s[i].mesh.quaternion.copy(s[i].body.quaternion);
+        }
+        if(settings.showPhysicsHelpers) this.helper.update();
+    }
+
+    addShapeToPhysics = (mesh, body, helperColor) => {
+        if(!this.sceneState.settings.showPhysicsHelpers) this.scene.add(mesh);
+        this.world.addBody(body);
+        this.sceneState.physics.shapes.push({ mesh, body });
+        this.sceneState.physics.shapesLength = this.sceneState.physics.shapes.length;
+        if(this.sceneState.settings.showPhysicsHelpers) this.helper.addVisual(body, helperColor || 0xFFFFFF);
     }
 
     resize(sceneState, renderer) {
