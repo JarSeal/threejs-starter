@@ -1,9 +1,11 @@
 import * as THREE from 'three';
+import * as CANNON from 'cannon';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import * as Stats from './vendor/stats.min.js';
 
 class Root {
     constructor() {
+        this.sceneState = {};
 
         // Setup renderer [START]
         const renderer = new THREE.WebGLRenderer();
@@ -34,7 +36,18 @@ class Root {
         this.camera = camera;
         // Setup camera and aspect ratio [/END]
 
-        // Debug statisctics [START]
+        // Setup physics (cannon.js) [START]
+        const world = new CANNON.World();
+        world.gravity.set(0, -9.82, 0);
+        this.world = world;
+        this.sceneState.physics = {
+            world,
+            fixedTimeStep: 1 / 60,
+            maxSubSteps: 3
+        };
+        // Setup physics (cannon.js) [/END]
+
+        // Setup debug statisctics [START]
         const createStats = () => {
             const s = new Stats();
             s.setMode(0);
@@ -43,14 +56,12 @@ class Root {
         this.stats = createStats();
         this.stats.domElement.id = 'debug-stats-wrapper';
         document.body.appendChild(this.stats.domElement);
-        // Debug statisctics [/END]
+        // Setup debug statisctics [/END]
 
         // Other setup [START]
-        this.sceneState = {
-            clock: new THREE.Clock(),
-            resizeFns: [this.resize],
-            getScreenResolution: this.getScreenResolution
-        };
+        this.sceneState.clock = new THREE.Clock(),
+        this.sceneState.resizeFns = [this.resize],
+        this.sceneState.getScreenResolution = this.getScreenResolution;
         this.initResizer();
         // Other setup [/END]
 
