@@ -67,6 +67,7 @@ class Root {
         gui.add(this.sceneState.settings, 'showStats').name('Show stats').onChange((value) => {
             document.getElementById('debug-stats-wrapper').style.display = value ? 'block' : 'none';
         });
+        this.sceneState.gui = gui;
         // GUI setup [/END]
 
         this.runApp(scene, camera);
