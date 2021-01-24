@@ -111,6 +111,15 @@ class Root {
             shape: new CANNON.Box(new CANNON.Vec3(bSize[0] / 2, bSize[1] / 2, bSize[2] / 2))
         });
         this.sceneState.physics.addShape(boxMesh, boxBody, 0xFF0000);
+        setTimeout(() => {
+            boxBody.velocity.y = 5;
+            setTimeout(() => {
+                boxBody.velocity.y = 5;
+                setTimeout(() => {
+                    boxBody.velocity.y = 5;
+                }, 3000);
+            }, 3000);
+        }, 3000);
 
         // Main app logic [/END]
 
