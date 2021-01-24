@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import * as CANNON from 'cannon';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import { GUI } from 'three/examples/jsm/libs/dat.gui.module.js';
 import * as Stats from './vendor/stats.min.js';
 import CannonHelper from './vendor/CannonHelper.js';
 
@@ -69,11 +70,19 @@ class Root {
         this.sceneState.getScreenResolution = this.getScreenResolution;
         this.sceneState.defaultSettings = {
             showPhysicsHelpers: false,
-            showMeters: true
+            showStats: true
         };
         this.sceneState.settings = { ...this.sceneState.defaultSettings };
         this.initResizer();
         // Other setup [/END]
+
+        // GUI setup [START]
+        const gui = new GUI();
+        gui.close();
+        gui.add(this.sceneState.settings, 'showStats').name('Show stats').onChange((value) => {
+            document.getElementById('debug-stats-wrapper').style.display = value ? 'block' : 'none';
+        });
+        // GUI setup [/END]
 
         this.runApp(scene, camera);
     }
@@ -111,14 +120,9 @@ class Root {
             shape: new CANNON.Box(new CANNON.Vec3(bSize[0] / 2, bSize[1] / 2, bSize[2] / 2))
         });
         this.sceneState.physics.addShape(boxMesh, boxBody, 0xFF0000);
+        // Jump:
         setTimeout(() => {
-            boxBody.velocity.y = 5;
-            setTimeout(() => {
-                boxBody.velocity.y = 5;
-                setTimeout(() => {
-                    boxBody.velocity.y = 5;
-                }, 3000);
-            }, 3000);
+            boxBody.velocity.y = 8;
         }, 3000);
 
         // Main app logic [/END]
@@ -133,7 +137,7 @@ class Root {
         const delta = this.sceneState.clock.getDelta();
         this.updatePhysics(delta);
         this.renderer.render(this.scene, this.camera);
-        this.stats.update(); // Debug statistics
+        if(this.sceneState.settings.showStats) this.stats.update(); // Debug statistics
     }
 
     updatePhysics(delta) {
@@ -150,7 +154,7 @@ class Root {
     }
 
     addShapeToPhysics = (mesh, body, helperColor) => {
-        this.scene.add(mesh);
+        if(!this.sceneState.settings.showPhysicsHelpers) this.scene.add(mesh);
         this.world.addBody(body);
         this.sceneState.physics.shapes.push({ mesh, body });
         this.sceneState.physics.shapesLength = this.sceneState.physics.shapes.length;
