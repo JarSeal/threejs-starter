@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import * as CANNON from 'cannon';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import * as Stats from './vendor/stats.min.js';
+import CannonHelper from './vendor/CannonHelper.js';
 
 class Root {
     constructor() {
@@ -43,9 +44,12 @@ class Root {
         world.solver.iterations = 10;
         this.sceneState.physics = {};
         this.sceneState.physics.world = world;
-        this.sceneState.physics.fixedTimeStep = 1 / 60;
+        this.sceneState.physics.timeStep = 1 / 60;
         this.sceneState.physics.maxSubSteps = 3;
+        this.sceneState.physics.addShape = this.addShapeToPhysics;
+        this.sceneState.physics.shapes = [];
         this.world = world;
+        this.helper = new CannonHelper(scene, world);
         // Setup physics (cannon.js) [/END]
 
         // Setup debug statisctics [START]
@@ -63,6 +67,11 @@ class Root {
         this.sceneState.clock = new THREE.Clock(),
         this.sceneState.resizeFns = [this.resize],
         this.sceneState.getScreenResolution = this.getScreenResolution;
+        this.sceneState.defaultSettings = {
+            showPhysicsHelpers: false,
+            showMeters: true
+        };
+        this.sceneState.settings = { ...this.sceneState.defaultSettings };
         this.initResizer();
         // Other setup [/END]
 
@@ -74,11 +83,35 @@ class Root {
         // Main app logic [START]
         camera.position.set(1, 1, 10);
         camera.lookAt(new THREE.Vector3(0, 0, 0));
-        const geo = new THREE.BoxBufferGeometry(1, 1, 1);
-        const mat = new THREE.MeshLambertMaterial({ color: 0xfff000 });
-        const mesh = new THREE.Mesh(geo, mat);
-        mesh.position.y = 0.5;
-        scene.add(mesh);
+
+        // Add ground
+        const gSize = [5, 0.2, 2];
+        const gPos = [0, 0, 0];
+        const groundGeo = new THREE.BoxBufferGeometry(gSize[0], gSize[1], gSize[2]);
+        const groundMat = new THREE.MeshLambertMaterial({ color: 0x666666 });
+        const groundMesh = new THREE.Mesh(groundGeo, groundMat);
+        groundMesh.position.set(gPos[0], gPos[1], gPos[2]);
+        const groundBody = new CANNON.Body({
+            mass: 0,
+            position: new CANNON.Vec3(gPos[0] / 2, gPos[1] / 2, gPos[2] / 2),
+            shape: new CANNON.Box(new CANNON.Vec3(gSize[0] / 2, gSize[1] / 2, gSize[2] / 2))
+        });
+        this.sceneState.physics.addShape(groundMesh, groundBody);
+
+        // Add a box
+        const bSize = [1, 1, 1];
+        const bPos = [0, 8, 0];
+        const boxGeo = new THREE.BoxBufferGeometry(1, 1, 1);
+        const boxMat = new THREE.MeshLambertMaterial({ color: 0xfff000 });
+        const boxMesh = new THREE.Mesh(boxGeo, boxMat);
+        boxMesh.position.set(bPos[0], bPos[1], bPos[2]);
+        const boxBody = new CANNON.Body({
+            mass: 5,
+            position: new CANNON.Vec3(bPos[0] / 2, bPos[1] / 2, bPos[2] / 2),
+            shape: new CANNON.Box(new CANNON.Vec3(bSize[0] / 2, bSize[1] / 2, bSize[2] / 2))
+        });
+        this.sceneState.physics.addShape(boxMesh, boxBody, 0xFF0000);
+
         // Main app logic [/END]
 
         this.resize(this.sceneState, this.renderer);
@@ -88,9 +121,31 @@ class Root {
 
     renderLoop = () => {
         requestAnimationFrame(this.renderLoop);
-        // const delta = this.sceneState.clock.getDelta();
+        const delta = this.sceneState.clock.getDelta();
+        this.updatePhysics(delta);
         this.renderer.render(this.scene, this.camera);
         this.stats.update(); // Debug statistics
+    }
+
+    updatePhysics(delta) {
+        let i;
+        const l = this.sceneState.physics.shapesLength,
+            s = this.sceneState.physics.shapes,
+            settings = this.sceneState.settings;
+        this.world.step(this.sceneState.physics.timeStep, delta, this.sceneState.physics.maxSubSteps);
+        for(i=0; i<l; i++) {
+            s[i].mesh.position.copy(s[i].body.position);
+            s[i].mesh.quaternion.copy(s[i].body.quaternion);
+        }
+        if(settings.showPhysicsHelpers) this.helper.update();
+    }
+
+    addShapeToPhysics = (mesh, body, helperColor) => {
+        this.scene.add(mesh);
+        this.world.addBody(body);
+        this.sceneState.physics.shapes.push({ mesh, body });
+        this.sceneState.physics.shapesLength = this.sceneState.physics.shapes.length;
+        if(this.sceneState.settings.showPhysicsHelpers) this.helper.addVisual(body, helperColor || 0xFFFFFF);
     }
 
     resize(sceneState, renderer) {
