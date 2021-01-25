@@ -1,21 +1,21 @@
 # Three.js starter template
 Three.js (with Cannon.js) starter template.
 
-Start:
+*Install:*
 
-		npm install
+`npm install`
 
-Run in development mode:
+*Run in development mode:*
 
-		npm start
+`npm start`
 
-Create a build:
+*Create a build:*
 
-		npm run build:front
+`npm run build:front`
 
-ESLint:
+*ESLint:*
 
-		npm run lint
+`npm run lint`
 
 There are two root files:
 - Three.js only version

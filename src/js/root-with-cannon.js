@@ -114,7 +114,7 @@ class Root {
         const bSize = [1, 1, 1];
         const bPos = [0, 8, 0];
         const boxGeo = new THREE.BoxBufferGeometry(bSize[0], bSize[1], bSize[2]);
-        const boxMat = new THREE.MeshLambertMaterial({ color: 0xfff000 });
+        const boxMat = new THREE.MeshLambertMaterial({ color: 0x999999 });
         const boxMesh = new THREE.Mesh(boxGeo, boxMat);
         boxMesh.position.set(bPos[0], bPos[1], bPos[2]);
         const boxBody = new CANNON.Body({

@@ -88,7 +88,7 @@ class Root {
 
         // Add a box
         const boxGeo = new THREE.BoxBufferGeometry(1, 1, 1);
-        const boxMat = new THREE.MeshLambertMaterial({ color: 0xfff000 });
+        const boxMat = new THREE.MeshLambertMaterial({ color: 0x999999 });
         const boxMesh = new THREE.Mesh(boxGeo, boxMat);
         boxMesh.position.set(0, 0.5, 0);
         scene.add(boxMesh);
