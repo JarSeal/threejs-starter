@@ -164,12 +164,15 @@ class Root {
         if(this.sceneState.settings.showPhysicsHelpers) this.helper.addVisual(body, helperColor || 0xFFFFFF);
     }
 
-    resize(sceneState, renderer) {
+    resize = (sceneState, renderer) => {
         const width = sceneState.getScreenResolution().x;
         const height = sceneState.getScreenResolution().y;
         const pixelRatio = window.devicePixelRatio || 1;
+        console.log('resize', width, height, pixelRatio);
         document.getElementsByTagName('body')[0].style.width = width + 'px';
         document.getElementsByTagName('body')[0].style.height = height + 'px';
+        this.camera.aspect = width / height;
+        this.camera.updateProjectionMatrix();
         renderer.setSize(width, height);
         renderer.setPixelRatio(pixelRatio);
     }
