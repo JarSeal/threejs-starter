@@ -2,7 +2,7 @@
 // Change /src/index.js require target to './js/root-with-cannon.js to use this version
 
 import * as THREE from 'three';
-import * as CANNON from 'cannon';
+import * as CANNON from 'cannon-es';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { GUI } from 'three/examples/jsm/libs/dat.gui.module.js';
 import * as Stats from './vendor/stats.min.js';
