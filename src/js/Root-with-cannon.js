@@ -6,7 +6,7 @@ import * as CANNON from 'cannon';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { GUI } from 'three/examples/jsm/libs/dat.gui.module.js';
 import * as Stats from './vendor/stats.min.js';
-import CannonHelper from './vendor/CannonHelper.js';
+import PhysicsHelper from './PhysicsHelper.js';
 
 class Root {
     constructor() {
@@ -53,7 +53,7 @@ class Root {
         this.sceneState.physics.addShape = this.addShapeToPhysics;
         this.sceneState.physics.shapes = [];
         this.world = world;
-        this.helper = new CannonHelper(scene, world);
+        this.helper = new PhysicsHelper(scene);
         // Setup physics (cannon.js) [/END]
 
         // Setup debug statisctics [START]
